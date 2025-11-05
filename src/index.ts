@@ -79,6 +79,12 @@ export default {
 			}
 		}
 
-		return fetch(originRequest);
+		const response = await fetch(originRequest);
+
+		response.headers.set('Access-Control-Allow-Origin', requestOrigin || '*');
+		response.headers.set('Access-Control-Allow-Methods', request.method);
+		response.headers.set('Access-Control-Allow-Headers', request.headers.get('Access-Control-Request-Headers') || '*');
+
+		return response;
 	},
 } satisfies ExportedHandler<Env>;
