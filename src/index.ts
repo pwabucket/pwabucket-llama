@@ -64,27 +64,42 @@ export default {
 			return new Response('Bad Request: Invalid url parameter', { status: 400 });
 		}
 
-		/* Create a new request to the forwarded URL */
-		const originRequest = new Request(forwardedURL, request);
+		/* Create new headers for the origin request */
+		const newHeaders = new Headers(request.headers);
 
 		/* Set the Origin header to match the forwarded URL's origin */
-		originRequest.headers.set('Origin', new URL(forwardedURL).origin);
+		newHeaders.set('Origin', new URL(forwardedURL).origin);
 
 		/* Transfer custom headers prefixed with 'x-llama-' to the origin request */
 		for (const [key, value] of request.headers) {
 			if (key.startsWith('x-llama-')) {
 				const target = key.replace('x-llama-', '');
-				originRequest.headers.set(target, value);
-				originRequest.headers.delete(key);
+				newHeaders.set(target, value);
+				newHeaders.delete(key);
 			}
 		}
 
+		/* Create a new request to the forwarded URL with modified headers */
+		const originRequest = new Request(forwardedURL, {
+			method: request.method,
+			headers: newHeaders,
+			body: request.body,
+			redirect: 'follow',
+		});
+
 		const response = await fetch(originRequest);
 
-		response.headers.set('Access-Control-Allow-Origin', requestOrigin || '*');
-		response.headers.set('Access-Control-Allow-Methods', request.method);
-		response.headers.set('Access-Control-Allow-Headers', request.headers.get('Access-Control-Request-Headers') || '*');
+		/* Create new response with CORS headers */
+		const newResponse = new Response(response.body, {
+			status: response.status,
+			statusText: response.statusText,
+			headers: new Headers(response.headers),
+		});
 
-		return response;
+		newResponse.headers.set('Access-Control-Allow-Origin', requestOrigin || '*');
+		newResponse.headers.set('Access-Control-Allow-Methods', request.method);
+		newResponse.headers.set('Access-Control-Allow-Headers', request.headers.get('Access-Control-Request-Headers') || '*');
+
+		return newResponse;
 	},
 } satisfies ExportedHandler<Env>;
