@@ -54,7 +54,7 @@ function setCORSHeaders(response: Response, origin: string | null, request: Requ
 	});
 
 	newResponse.headers.set('Access-Control-Allow-Origin', origin || '*');
-	newResponse.headers.set('Access-Control-Allow-Methods', request.method || '*');
+	newResponse.headers.set('Access-Control-Allow-Methods', request.headers.get('Access-Control-Request-Method') || '*');
 	newResponse.headers.set('Access-Control-Allow-Headers', request.headers.get('Access-Control-Request-Headers') || '*');
 
 	return newResponse;
