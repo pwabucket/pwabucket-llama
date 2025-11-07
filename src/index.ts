@@ -45,6 +45,21 @@ function isValidURL(url: string): boolean {
 		return false;
 	}
 }
+
+function setCORSHeaders(response: Response, origin: string | null, request: Request): Response {
+	const newResponse = new Response(response.body, {
+		status: response.status,
+		statusText: response.statusText,
+		headers: new Headers(response.headers),
+	});
+
+	newResponse.headers.set('Access-Control-Allow-Origin', origin || '*');
+	newResponse.headers.set('Access-Control-Allow-Methods', request.method || '*');
+	newResponse.headers.set('Access-Control-Allow-Headers', request.headers.get('Access-Control-Request-Headers') || '*');
+
+	return newResponse;
+}
+
 export default {
 	async fetch(request, env, ctx): Promise<Response> {
 		const url = new URL(request.url);
@@ -62,6 +77,10 @@ export default {
 			return new Response('Bad Request: Missing url parameter', { status: 400 });
 		} else if (!isValidURL(forwardedURL)) {
 			return new Response('Bad Request: Invalid url parameter', { status: 400 });
+		}
+
+		if (request.method === 'OPTIONS') {
+			return setCORSHeaders(new Response(null, { status: 204 }), requestOrigin, request);
 		}
 
 		/* Create new headers for the origin request */
@@ -90,16 +109,6 @@ export default {
 		const response = await fetch(originRequest);
 
 		/* Create new response with CORS headers */
-		const newResponse = new Response(response.body, {
-			status: response.status,
-			statusText: response.statusText,
-			headers: new Headers(response.headers),
-		});
-
-		newResponse.headers.set('Access-Control-Allow-Origin', requestOrigin || '*');
-		newResponse.headers.set('Access-Control-Allow-Methods', request.method);
-		newResponse.headers.set('Access-Control-Allow-Headers', request.headers.get('Access-Control-Request-Headers') || '*');
-
-		return newResponse;
+		return setCORSHeaders(response, requestOrigin, request);
 	},
 } satisfies ExportedHandler<Env>;
