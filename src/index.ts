@@ -39,13 +39,14 @@ function getRootDomain(url: string): string | null {
 
 function isValidURL(url: string): boolean {
 	try {
-		new URL(url);
-		return true;
+		const parsed = new URL(url);
+		return parsed.protocol === 'http:' || parsed.protocol === 'https:';
 	} catch (error) {
 		return false;
 	}
 }
 
+/* Set CORS headers on the response */
 function setCORSHeaders(response: Response, origin: string | null, request: Request): Response {
 	const newResponse = new Response(response.body, {
 		status: response.status,
@@ -83,11 +84,16 @@ export default {
 			return setCORSHeaders(new Response(null, { status: 204 }), requestOrigin, request);
 		}
 
+		/* Parse the forwarded URL */
+		const parsedForwardedURL = new URL(forwardedURL);
+
 		/* Create new headers for the origin request */
 		const newHeaders = new Headers(request.headers);
 
-		/* Set the Origin header to match the forwarded URL's origin */
-		newHeaders.set('Origin', new URL(forwardedURL).origin);
+		/* Set Origin, Host and Referer headers */
+		newHeaders.set('Host', parsedForwardedURL.host);
+		newHeaders.set('Origin', parsedForwardedURL.origin);
+		newHeaders.set('Referer', parsedForwardedURL.origin + '/');
 
 		/* Transfer custom headers prefixed with 'x-llama-' to the origin request */
 		for (const [key, value] of request.headers) {
