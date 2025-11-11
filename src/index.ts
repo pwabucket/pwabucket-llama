@@ -57,9 +57,9 @@ function setCORSHeaders(response: Response, origin: string | null, request: Requ
 	newHeaders.delete('Access-Control-Allow-Credentials');
 
 	/* Set our CORS headers */
-	newHeaders.set('Access-Control-Allow-Origin', origin || '*');
-	newHeaders.set('Access-Control-Allow-Methods', request.headers.get('Access-Control-Request-Method') || '*');
-	newHeaders.set('Access-Control-Allow-Headers', request.headers.get('Access-Control-Request-Headers') || '*');
+	newHeaders.set('Access-Control-Allow-Origin', '*');
+	newHeaders.set('Access-Control-Allow-Methods', '*');
+	newHeaders.set('Access-Control-Allow-Headers', '*');
 
 	const newResponse = new Response(response.body, {
 		status: response.status,
