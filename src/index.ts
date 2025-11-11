@@ -108,8 +108,9 @@ export default {
 		for (const [key, value] of request.headers) {
 			if (key.startsWith('x-llama-')) {
 				const target = key.replace('x-llama-', '');
-				newHeaders.set(target, value);
 				newHeaders.delete(key);
+				newHeaders.delete(target);
+				newHeaders.set(target, value);
 			}
 		}
 
