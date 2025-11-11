@@ -99,6 +99,11 @@ export default {
 		/* Create new headers for the origin request */
 		const newHeaders = new Headers(request.headers);
 
+		/* Remove existing Host, Origin and Referer headers */
+		newHeaders.delete('Host');
+		newHeaders.delete('Origin');
+		newHeaders.delete('Referer');
+
 		/* Set Origin, Host and Referer headers */
 		newHeaders.set('Host', parsedForwardedURL.host);
 		newHeaders.set('Origin', parsedForwardedURL.origin);
