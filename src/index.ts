@@ -48,15 +48,24 @@ function isValidURL(url: string): boolean {
 
 /* Set CORS headers on the response */
 function setCORSHeaders(response: Response, origin: string | null, request: Request): Response {
+	const newHeaders = new Headers(response.headers);
+
+	/* Delete any existing CORS headers from the proxied response */
+	newHeaders.delete('Access-Control-Allow-Origin');
+	newHeaders.delete('Access-Control-Allow-Methods');
+	newHeaders.delete('Access-Control-Allow-Headers');
+	newHeaders.delete('Access-Control-Allow-Credentials');
+
+	/* Set our CORS headers */
+	newHeaders.set('Access-Control-Allow-Origin', origin || '*');
+	newHeaders.set('Access-Control-Allow-Methods', request.headers.get('Access-Control-Request-Method') || '*');
+	newHeaders.set('Access-Control-Allow-Headers', request.headers.get('Access-Control-Request-Headers') || '*');
+
 	const newResponse = new Response(response.body, {
 		status: response.status,
 		statusText: response.statusText,
-		headers: new Headers(response.headers),
+		headers: newHeaders,
 	});
-
-	newResponse.headers.set('Access-Control-Allow-Origin', origin || '*');
-	newResponse.headers.set('Access-Control-Allow-Methods', request.headers.get('Access-Control-Request-Method') || '*');
-	newResponse.headers.set('Access-Control-Allow-Headers', request.headers.get('Access-Control-Request-Headers') || '*');
 
 	return newResponse;
 }
@@ -70,14 +79,14 @@ export default {
 		const rootDomain = getRootDomain(requestOrigin || '');
 
 		if (!rootDomain || !allowedDomains.includes(rootDomain)) {
-			return new Response('Forbidden: Origin not allowed', { status: 403 });
+			return setCORSHeaders(new Response('Forbidden: Origin not allowed', { status: 403 }), requestOrigin, request);
 		}
 
 		const forwardedURL = url.searchParams.get('url');
 		if (!forwardedURL) {
-			return new Response('Bad Request: Missing url parameter', { status: 400 });
+			return setCORSHeaders(new Response('Bad Request: Missing url parameter', { status: 400 }), requestOrigin, request);
 		} else if (!isValidURL(forwardedURL)) {
-			return new Response('Bad Request: Invalid url parameter', { status: 400 });
+			return setCORSHeaders(new Response('Bad Request: Invalid url parameter', { status: 400 }), requestOrigin, request);
 		}
 
 		if (request.method === 'OPTIONS') {
